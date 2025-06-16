@@ -3,175 +3,199 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Wheel of Fortune Classroom Game</title>
+  <title>Wheel of Fortune Puzzle Board</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      text-align: center;
+      background: #f8f9fa;
       padding: 20px;
+      text-align: center;
+    }
+    #puzzleBoard {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
     }
     .tile {
       width: 40px;
       height: 50px;
-      border: 2px solid #444;
+      border: 2px solid #333;
       margin: 5px;
       font-size: 28px;
-      display: inline-flex;
-      justify-content: center;
+      text-transform: uppercase;
+      display: flex;
       align-items: center;
-      background: white;
+      justify-content: center;
+      background-color: white;
     }
     .revealed {
       background-color: #a8e6cf;
       font-weight: bold;
+      color: black;
     }
     .hidden {
       color: transparent;
     }
-    .scoreboard input {
+    #phraseInput, #maskedInput {
+      display: none;
+    }
+    #showAnswerBtn {
+      margin-top: 10px;
+    }
+    .teamWrapper {
+      margin-top: 40px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    .teamBox {
+      text-align: center;
+    }
+    .scorebox, .totalbox {
       width: 100px;
       height: 40px;
       font-size: 18px;
-      margin: 5px;
       text-align: center;
     }
-    canvas {
-      margin-top: 20px;
-      border: 4px solid #000;
-      border-radius: 50%;
+    #wheelSection {
+      margin-top: 40px;
+    }
+    #spinCanvas {
+      margin: 0 auto;
       display: block;
-      margin-left: auto;
-      margin-right: auto;
+      border: 4px solid #333;
+      border-radius: 50%;
+      background: #fff;
     }
     #spinResult {
       font-size: 24px;
+      margin-top: 10px;
       font-weight: bold;
-      margin: 15px;
-    }
-    .pointer {
-      width: 0; 
-      height: 0; 
-      border-left: 15px solid transparent;
-      border-right: 15px solid transparent;
-      border-bottom: 25px solid red;
-      margin: auto;
     }
   </style>
 </head>
 <body>
-  <h1>Wheel of Fortune Classroom Game</h1>
-
-  <button onclick="togglePuzzleInput()">Edit Puzzle Phrase</button><br><br>
-  <input type="password" id="puzzleMasked" style="display:none;" placeholder="Type puzzle phrase" oninput="setPuzzle(this.value)" />
-  <input type="text" id="puzzleRaw" style="display:none;" />
-
-  <div id="puzzleBoard" style="margin: 20px 0;"></div>
-
-  <input type="text" id="guessLetter" maxlength="1" placeholder="Guess a letter"/>
+  <h1>Wheel of Fortune Puzzle Board</h1>
+  <button id="showAnswerBtn" onclick="toggleInput()">Edit Puzzle Phrase</button>
+  <br><br>
+  <input type="password" id="maskedInput" placeholder="Enter your puzzle phrase here" size="50" oninput="updateMaskedPhrase(this.value)" />
+  <input type="text" id="phraseInput" style="display:none;" />
+  <br><br>
+  <input type="text" id="guessedLetter" placeholder="Type a letter to reveal" maxlength="1" />
   <button onclick="revealLetter()">Reveal Letter</button>
   <button onclick="solvePuzzle()">Solve Puzzle</button>
+  <div id="puzzleBoard"></div>
 
-  <div class="pointer"></div>
-  <canvas id="wheelCanvas" width="300" height="300"></canvas>
-  <button onclick="spinWheel()">Spin</button>
-  <div id="spinResult"></div>
+  <div id="wheelSection">
+    <h2>Spin the Wheel!</h2>
+    <canvas id="spinCanvas" width="300" height="300"></canvas>
+    <button onclick="spinWheel()">Spin</button>
+    <div id="spinResult"></div>
+  </div>
 
-  <div class="scoreboard">
-    <div>
-      <input id="roundScore1" placeholder="Team 1 Round">
-      <input id="totalScore1" value="0" placeholder="Total 1">
+  <div class="teamWrapper">
+    <!-- Repeat for each team -->
+    <div class="teamBox">
+      <div>Team 1</div>
+      <input type="number" class="scorebox" id="roundScore1" placeholder="Round Score"/>
+      <input type="number" class="totalbox" id="totalScore1" placeholder="Total Score" value="0"/>
     </div>
-    <div>
-      <input id="roundScore2" placeholder="Team 2 Round">
-      <input id="totalScore2" value="0" placeholder="Total 2">
+    <div class="teamBox">
+      <div>Team 2</div>
+      <input type="number" class="scorebox" id="roundScore2" placeholder="Round Score"/>
+      <input type="number" class="totalbox" id="totalScore2" placeholder="Total Score" value="0"/>
     </div>
-    <div>
-      <input id="roundScore3" placeholder="Team 3 Round">
-      <input id="totalScore3" value="0" placeholder="Total 3">
+    <div class="teamBox">
+      <div>Team 3</div>
+      <input type="number" class="scorebox" id="roundScore3" placeholder="Round Score"/>
+      <input type="number" class="totalbox" id="totalScore3" placeholder="Total Score" value="0"/>
     </div>
-    <div>
-      <input id="roundScore4" placeholder="Team 4 Round">
-      <input id="totalScore4" value="0" placeholder="Total 4">
+    <div class="teamBox">
+      <div>Team 4</div>
+      <input type="number" class="scorebox" id="roundScore4" placeholder="Round Score"/>
+      <input type="number" class="totalbox" id="totalScore4" placeholder="Total Score" value="0"/>
     </div>
-    <div>
-      <input id="roundScore5" placeholder="Team 5 Round">
-      <input id="totalScore5" value="0" placeholder="Total 5">
+    <div class="teamBox">
+      <div>Team 5</div>
+      <input type="number" class="scorebox" id="roundScore5" placeholder="Round Score"/>
+      <input type="number" class="totalbox" id="totalScore5" placeholder="Total Score" value="0"/>
     </div>
   </div>
 
   <script>
-    let puzzle = "";
+    let puzzle = '';
     let revealed = [];
     let currentSpinValue = "$0";
 
-    function togglePuzzleInput() {
-      const masked = document.getElementById("puzzleMasked");
-      masked.style.display = masked.style.display === "none" ? "inline-block" : "none";
-      if (masked.style.display !== "none") masked.focus();
+    function toggleInput() {
+      const masked = document.getElementById('maskedInput');
+      const phraseInput = document.getElementById('phraseInput');
+      const isHidden = masked.style.display === 'none';
+      masked.style.display = isHidden ? 'inline-block' : 'none';
+      phraseInput.style.display = isHidden ? 'inline-block' : 'none';
+      if (isHidden) masked.focus();
     }
 
-    function setPuzzle(value) {
+    function updateMaskedPhrase(value) {
+      document.getElementById('phraseInput').value = value;
       puzzle = value.toUpperCase();
-      document.getElementById("puzzleRaw").value = puzzle;
-      revealed = puzzle.split('').map(c => !/[A-Z]/.test(c));
+      revealed = puzzle.split('').map(char => !/[A-Z]/.test(char));
       renderPuzzle();
     }
 
     function renderPuzzle() {
-      const board = document.getElementById("puzzleBoard");
-      board.innerHTML = "";
-      puzzle.split('').forEach((c, i) => {
+      const board = document.getElementById('puzzleBoard');
+      board.innerHTML = '';
+      for (let i = 0; i < puzzle.length; i++) {
+        const char = puzzle[i];
         const div = document.createElement('div');
-        div.className = 'tile';
-        if (c === ' ') {
-          div.style.border = "none";
+        div.classList.add('tile');
+        if (char === ' ') {
+          div.style.border = 'none';
         } else if (revealed[i]) {
-          div.classList.add("revealed");
-          div.textContent = c;
+          div.classList.add('revealed');
+          div.textContent = char;
         } else {
-          div.classList.add("hidden");
-          div.textContent = c;
+          div.classList.add('hidden');
+          div.textContent = char;
         }
         board.appendChild(div);
-      });
+      }
     }
 
     function revealLetter() {
-      const letter = document.getElementById("guessLetter").value.toUpperCase();
-      document.getElementById("guessLetter").value = "";
+      const letter = document.getElementById('guessedLetter').value.toUpperCase();
       if (!letter.match(/[A-Z]/)) return;
-
       let matches = 0;
-      puzzle.split('').forEach((c, i) => {
-        if (c === letter && !revealed[i]) {
+      for (let i = 0; i < puzzle.length; i++) {
+        if (puzzle[i] === letter && !revealed[i]) {
           revealed[i] = true;
           matches++;
         }
-      });
-
-      const value = parseInt(currentSpinValue.replace('$','')) || 0;
-      if (matches > 0) {
-        const team = prompt("Which team guessed correctly? (1-5)");
-        const scoreBox = document.getElementById(`roundScore${team}`);
-        scoreBox.value = parseInt(scoreBox.value || 0) + matches * value;
       }
-
+      const points = parseInt((currentSpinValue || "$0").replace('$', '')) || 0;
+      if (matches > 0) {
+        const teamIndex = prompt('Which team guessed correctly? (1-5)');
+        const roundScore = document.getElementById(`roundScore${teamIndex}`);
+        roundScore.value = parseInt(roundScore.value || '0') + matches * points;
+      }
+      document.getElementById('guessedLetter').value = '';
       renderPuzzle();
     }
 
     function solvePuzzle() {
-      const guess = prompt("Enter the full puzzle:").toUpperCase();
-      if (guess === puzzle) {
+      const answer = prompt("Enter the full puzzle to solve:").toUpperCase();
+      if (answer === puzzle) {
         revealed = puzzle.split('').map(() => true);
         renderPuzzle();
-        const team = prompt("Which team solved it? (1-5)");
-        const roundScore = parseInt(document.getElementById(`roundScore${team}`).value || 0);
-        const totalBox = document.getElementById(`totalScore${team}`);
-        totalBox.value = parseInt(totalBox.value || 0) + roundScore;
-        alert("Correct!");
+        const teamIndex = prompt('Which team solved the puzzle? (1-5)');
+        const roundScore = parseInt(document.getElementById(`roundScore${teamIndex}`).value || '0');
+        const totalScore = document.getElementById(`totalScore${teamIndex}`);
+        totalScore.value = parseInt(totalScore.value || '0') + roundScore;
+        alert(`Correct! ${puzzle} was the right answer.`);
       } else {
-        alert("Incorrect.");
+        alert("Incorrect guess.");
       }
     }
 
@@ -186,75 +210,86 @@
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
       }
+      return array;
     }
 
-    let finalWedges = [...wedges];
-    shuffle(finalWedges);
+    let normalWedges = wedges.filter(w => w !== "Bankrupt" && w !== "Lose a Turn");
+    normalWedges = shuffle(normalWedges);
+    const half = Math.floor(normalWedges.length / 2);
+    normalWedges.splice(half, 0, "Bankrupt");
+    normalWedges.splice(0, 0, "Lose a Turn");
+    const finalWedges = normalWedges;
 
-    // Force "Bankrupt" and "Lose a Turn" to opposite sides
-    const bIndex = finalWedges.indexOf("Bankrupt");
-    const lIndex = (bIndex + finalWedges.length / 2) % finalWedges.length;
-    finalWedges.splice(finalWedges.indexOf("Lose a Turn"), 1);
-    finalWedges.splice(lIndex, 0, "Lose a Turn");
-
-    let angle = 0, spinning = false;
+    let angle = 0;
+    let spinning = false;
 
     function drawWheel() {
-      const canvas = document.getElementById("wheelCanvas");
-      const ctx = canvas.getContext("2d");
-      const center = canvas.width / 2;
-      const radius = center;
-      const step = 2 * Math.PI / finalWedges.length;
+      const canvas = document.getElementById('spinCanvas');
+      const ctx = canvas.getContext('2d');
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = centerX;
+      const step = (2 * Math.PI) / finalWedges.length;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
-      ctx.translate(center, center);
+      ctx.translate(centerX, centerY);
       ctx.rotate(angle);
 
       for (let i = 0; i < finalWedges.length; i++) {
         const start = i * step;
         const end = start + step;
+
         ctx.beginPath();
-        ctx.moveTo(0,0);
+        ctx.moveTo(0, 0);
         ctx.arc(0, 0, radius, start, end);
-        ctx.closePath();
-        ctx.fillStyle = finalWedges[i] === "Bankrupt" ? "black" : finalWedges[i] === "Lose a Turn" ? "white" : `hsl(${Math.random()*360}, 70%, 60%)`;
+        ctx.fillStyle = finalWedges[i] === "Bankrupt" ? '#000' : finalWedges[i] === "Lose a Turn" ? '#fff' : `hsl(${Math.random() * 360}, 70%, 60%)`;
         ctx.fill();
         ctx.stroke();
 
         ctx.save();
         ctx.rotate(start + step / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = finalWedges[i] === "Lose a Turn" ? "#000" : "#fff";
-        ctx.font = "bold 14px Arial";
+        ctx.textAlign = 'right';
+        ctx.fillStyle = finalWedges[i] === "Lose a Turn" ? '#000' : '#000';
+        ctx.font = 'bold 14px Arial';
         ctx.fillText(finalWedges[i], radius - 10, 5);
         ctx.restore();
       }
 
       ctx.restore();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, 0);
+      ctx.lineTo(centerX - 10, 20);
+      ctx.lineTo(centerX + 10, 20);
+      ctx.closePath();
+      ctx.fillStyle = 'red';
+      ctx.fill();
     }
 
     function spinWheel() {
       if (spinning) return;
       spinning = true;
       const duration = 3000;
-      const start = angle;
-      const end = angle + 10 * Math.PI + Math.random() * 2 * Math.PI;
+      const startAngle = angle;
+      const endAngle = startAngle + 10 * Math.PI + Math.random() * 2 * Math.PI;
       const startTime = performance.now();
 
       function animate(time) {
-        const progress = Math.min((time - startTime) / duration, 1);
-        angle = start + (end - start) * (1 - Math.pow(1 - progress, 3));
+        const elapsed = time - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        angle = startAngle + (endAngle - startAngle) * easedProgress;
         drawWheel();
 
         if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
           angle %= 2 * Math.PI;
-          const step = 2 * Math.PI / finalWedges.length;
-          const index = (finalWedges.length - Math.floor(angle / step)) % finalWedges.length;
+          const step = (2 * Math.PI) / finalWedges.length;
+          const index = Math.floor((finalWedges.length - Math.floor((angle / step))) % finalWedges.length);
           currentSpinValue = finalWedges[index];
-          document.getElementById("spinResult").textContent = "You spun: " + currentSpinValue;
+          document.getElementById('spinResult').textContent = `You spun: ${currentSpinValue}`;
           spinning = false;
         }
       }
@@ -266,5 +301,6 @@
   </script>
 </body>
 </html>
+
 
 
