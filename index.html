@@ -123,7 +123,165 @@
     ];
 
     const shuffledWedges = (() => {
-      const norm = wedges.filter(w => w !== "Bankrupt" && w
+      const norm = wedges.filter(w => w !== "Bankrupt" && w !== "Lose a Turn");
+      const shuffled = norm.sort(() => Math.random() - 0.5);
+      const middle = Math.floor(shuffled.length / 2);
+      shuffled.splice(middle, 0, "Bankrupt");
+      shuffled.splice(0, 0, "Lose a Turn");
+      return shuffled;
+    })();
+
+    function toggleInput() {
+      const masked = document.getElementById('maskedInput');
+      const phraseInput = document.getElementById('phraseInput');
+      const isHidden = masked.style.display === 'none';
+      masked.style.display = isHidden ? 'inline-block' : 'none';
+      phraseInput.style.display = 'none';
+      if (isHidden) masked.focus();
+    }
+
+    function updateMaskedPhrase(value) {
+      document.getElementById('phraseInput').value = value;
+      puzzle = value.toUpperCase();
+      revealed = puzzle.split('').map(c => !/[A-Z]/.test(c));
+      renderPuzzle();
+    }
+
+    function renderPuzzle() {
+      const board = document.getElementById('puzzleBoard');
+      board.innerHTML = '';
+      for (let i = 0; i < puzzle.length; i++) {
+        const div = document.createElement('div');
+        div.className = 'tile';
+        if (puzzle[i] === ' ') {
+          div.style.border = 'none';
+        } else if (revealed[i]) {
+          div.classList.add('revealed');
+          div.textContent = puzzle[i];
+        } else {
+          div.classList.add('hidden');
+          div.textContent = puzzle[i];
+        }
+        board.appendChild(div);
+      }
+    }
+
+    function revealLetter() {
+      const letter = document.getElementById('guessedLetter').value.toUpperCase();
+      if (!/[A-Z]/.test(letter)) return;
+      let matches = 0;
+      for (let i = 0; i < puzzle.length; i++) {
+        if (puzzle[i] === letter && !revealed[i]) {
+          revealed[i] = true;
+          matches++;
+        }
+      }
+      const points = parseInt(currentSpinValue.replace('$', '')) || 0;
+      if (matches > 0) {
+        const team = prompt('Which team guessed correctly? (1-5)');
+        const scoreBox = document.getElementById(`roundScore${team}`);
+        scoreBox.value = parseInt(scoreBox.value || '0') + matches * points;
+      }
+      document.getElementById('guessedLetter').value = '';
+      renderPuzzle();
+    }
+
+    function solvePuzzle() {
+      const guess = prompt("Enter the full puzzle to solve:").toUpperCase();
+      if (guess === puzzle) {
+        revealed = puzzle.split('').map(() => true);
+        renderPuzzle();
+        const team = prompt('Which team solved it? (1-5)');
+        const round = parseInt(document.getElementById(`roundScore${team}`).value || '0');
+        const totalBox = document.getElementById(`totalScore${team}`);
+        totalBox.value = parseInt(totalBox.value || '0') + round;
+        alert("Correct!");
+      } else {
+        alert("Incorrect guess.");
+      }
+    }
+
+    function drawWheel() {
+      const canvas = document.getElementById('spinCanvas');
+      const ctx = canvas.getContext('2d');
+      const radius = canvas.width / 2;
+      const step = (2 * Math.PI) / shuffledWedges.length;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(radius, radius);
+      ctx.rotate(angle);
+
+      for (let i = 0; i < shuffledWedges.length; i++) {
+        const start = i * step;
+        const end = start + step;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, start, end);
+        ctx.fillStyle =
+          shuffledWedges[i] === "Bankrupt" ? "#000" :
+          shuffledWedges[i] === "Lose a Turn" ? "#fff" :
+          `hsl(${Math.random() * 360}, 70%, 70%)`;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.save();
+        ctx.rotate(start + step / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = shuffledWedges[i] === "Lose a Turn" ? "#000" : "#000";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText(shuffledWedges[i], radius - 10, 5);
+        ctx.restore();
+      }
+
+      ctx.restore();
+
+      // Red Arrow
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(radius - 10, 20);
+      ctx.lineTo(radius + 10, 20);
+      ctx.closePath();
+      ctx.fillStyle = 'red';
+      ctx.fill();
+    }
+
+    function spinWheel() {
+      if (spinning) return;
+      spinning = true;
+      const duration = 3000;
+      const startAngle = angle;
+      const endAngle = startAngle + 10 * Math.PI + Math.random() * 2 * Math.PI;
+      const startTime = performance.now();
+
+      function animate(time) {
+        const elapsed = time - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        angle = startAngle + (endAngle - startAngle) * eased;
+        drawWheel();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          spinning = false;
+          angle %= 2 * Math.PI;
+          const step = (2 * Math.PI) / shuffledWedges.length;
+          const correctedAngle = (2 * Math.PI - angle + step / 2) % (2 * Math.PI);
+          const index = Math.floor(correctedAngle / step);
+          currentSpinValue = shuffledWedges[index];
+          document.getElementById('spinResult').textContent = `You spun: ${currentSpinValue}`;
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    drawWheel();
+  </script>
+</body>
+</html>
 
 
 
