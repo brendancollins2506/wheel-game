@@ -37,7 +37,7 @@
     .hidden {
       color: transparent;
     }
-    #phraseInput, #maskedInput {
+    #maskedInput {
       display: none;
     }
     #showAnswerBtn {
@@ -83,14 +83,13 @@
 </head>
 <body>
   <h1>Wheel of Fortune Puzzle Board</h1>
-  <button id="showAnswerBtn" onclick="toggleInput()">Edit Puzzle Phrase</button>
-  <br /><br />
-  <input type="password" id="maskedInput" placeholder="Enter your puzzle phrase here" size="50" oninput="updateMaskedPhrase(this.value)" />
-  <input type="text" id="phraseInput" style="display:none;" />
-  <br /><br />
+  <button id="showAnswerBtn" onclick="toggleInput()">Edit Puzzle Phrase</button><br/><br/>
+  <input type="password" id="maskedInput" placeholder="Enter your puzzle phrase here" size="50" oninput="updateMaskedPhrase(this.value)" /><br/><br/>
+
   <input type="text" id="guessedLetter" placeholder="Type a letter to reveal" maxlength="1" />
   <button onclick="revealLetter()">Reveal Letter</button>
   <button onclick="solvePuzzle()">Solve Puzzle</button>
+
   <div id="puzzleBoard"></div>
 
   <div id="wheelSection">
@@ -123,15 +122,12 @@
 
     function toggleInput() {
       const masked = document.getElementById('maskedInput');
-      const phraseInput = document.getElementById('phraseInput');
       const isHidden = masked.style.display === 'none';
       masked.style.display = isHidden ? 'inline-block' : 'none';
-      phraseInput.style.display = isHidden ? 'inline-block' : 'none';
       if (isHidden) masked.focus();
     }
 
     function updateMaskedPhrase(value) {
-      document.getElementById('phraseInput').value = value;
       puzzle = value.toUpperCase();
       revealed = puzzle.split('').map(char => !/[A-Z]/.test(char));
       renderPuzzle();
@@ -146,7 +142,6 @@
         div.classList.add('tile');
         if (char === ' ') {
           div.style.border = 'none';
-          div.textContent = ' ';
         } else if (revealed[i]) {
           div.classList.add('revealed');
           div.textContent = char;
@@ -170,12 +165,9 @@
       }
       const points = parseInt((currentSpinValue || "$0").replace('$', '')) || 0;
       if (matches > 0) {
-        let teamIndex = prompt('Which team guessed correctly? (1-5)');
-        teamIndex = parseInt(teamIndex);
-        if (teamIndex >= 1 && teamIndex <= 5) {
-          const roundScore = document.getElementById(`roundScore${teamIndex}`);
-          roundScore.value = parseInt(roundScore.value || '0') + matches * points;
-        }
+        const teamIndex = prompt('Which team guessed correctly? (1-5)');
+        const roundScore = document.getElementById(`roundScore${teamIndex}`);
+        roundScore.value = parseInt(roundScore.value || '0') + matches * points;
       }
       document.getElementById('guessedLetter').value = '';
       renderPuzzle();
@@ -186,17 +178,10 @@
       if (answer === puzzle) {
         revealed = puzzle.split('').map(() => true);
         renderPuzzle();
-        let teamIndex = prompt('Which team solved the puzzle? (1-5)');
-        teamIndex = parseInt(teamIndex);
-        if (teamIndex >= 1 && teamIndex <= 5) {
-          const roundScore = parseInt(document.getElementById(`roundScore${teamIndex}`).value || '0');
-          const totalScore = document.getElementById(`totalScore${teamIndex}`);
-          totalScore.value = parseInt(totalScore.value || '0') + roundScore;
-          // Reset round scores after puzzle solved
-          for(let i=1; i<=5; i++) {
-            document.getElementById(`roundScore${i}`).value = 0;
-          }
-        }
+        const teamIndex = prompt('Which team solved the puzzle? (1-5)');
+        const roundScore = parseInt(document.getElementById(`roundScore${teamIndex}`).value || '0');
+        const totalScore = document.getElementById(`totalScore${teamIndex}`);
+        totalScore.value = parseInt(totalScore.value || '0') + roundScore;
         alert(`Correct! ${puzzle} was the right answer.`);
       } else {
         alert("Incorrect guess.");
@@ -206,7 +191,7 @@
     const wedges = [
       "$500", "$700", "$600", "$900", "$800", "$5000",
       "$600", "$500", "$700", "$800", "$900", "$500",
-      "$600", "$700", "Bankrupt", "Lose a Turn"
+      "$600", "$700"
     ];
 
     function shuffle(array) {
@@ -217,22 +202,11 @@
       return array;
     }
 
-    // Arrange wedges so Lose a Turn and Bankrupt are opposite
-    function arrangeWedges() {
-      let normalWedges = wedges.filter(w => w !== "Bankrupt" && w !== "Lose a Turn");
-      normalWedges = shuffle(normalWedges);
-
-      // Insert Lose a Turn at 0
-      normalWedges.splice(0, 0, "Lose a Turn");
-
-      // Insert Bankrupt opposite side
-      const oppositeIndex = Math.floor(normalWedges.length / 2);
-      normalWedges.splice(oppositeIndex, 0, "Bankrupt");
-
-      return normalWedges;
-    }
-
-    const finalWedges = arrangeWedges();
+    let normalWedges = shuffle([...wedges]);
+    const half = Math.floor(normalWedges.length / 2);
+    normalWedges.splice(half, 0, "Bankrupt");
+    normalWedges.splice(0, 0, "Lose a Turn");
+    const finalWedges = normalWedges;
 
     let angle = 0;
     let spinning = false;
@@ -257,24 +231,16 @@
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, radius, start, end);
-
-        // Color assignment
-        if (finalWedges[i] === "Bankrupt") {
-          ctx.fillStyle = '#000000';
-        } else if (finalWedges[i] === "Lose a Turn") {
-          ctx.fillStyle = '#ffffff';
-        } else {
-          // Use HSL with fixed saturation and lightness and a random but fixed hue per slice index
-          ctx.fillStyle = `hsl(${(i * 360 / finalWedges.length)}, 70%, 60%)`;
-        }
+        ctx.fillStyle = finalWedges[i] === "Bankrupt" ? '#000' :
+                        finalWedges[i] === "Lose a Turn" ? '#fff' :
+                        `hsl(${Math.random() * 360}, 70%, 60%)`;
         ctx.fill();
         ctx.stroke();
 
-        // Draw text
         ctx.save();
         ctx.rotate(start + step / 2);
         ctx.textAlign = 'right';
-        ctx.fillStyle = finalWedges[i] === "Lose a Turn" ? '#000000' : '#000000';
+        ctx.fillStyle = finalWedges[i] === "Lose a Turn" ? '#000' : '#000';
         ctx.font = 'bold 14px Arial';
         ctx.fillText(finalWedges[i], radius - 10, 5);
         ctx.restore();
@@ -282,7 +248,6 @@
 
       ctx.restore();
 
-      // Draw pointer
       ctx.beginPath();
       ctx.moveTo(centerX, 0);
       ctx.lineTo(centerX - 10, 20);
@@ -295,16 +260,15 @@
     function spinWheel() {
       if (spinning) return;
       spinning = true;
-      const duration = 4000;
+      const duration = 3000;
       const startAngle = angle;
-      const spins = 10; // number of rotations before slowing
-      const endAngle = startAngle + spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
+      const endAngle = startAngle + 10 * Math.PI + Math.random() * 2 * Math.PI;
       const startTime = performance.now();
 
       function animate(time) {
         const elapsed = time - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        const easedProgress = 1 - Math.pow(1 - progress, 3); // ease out cubic
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
         angle = startAngle + (endAngle - startAngle) * easedProgress;
         drawWheel();
 
@@ -313,8 +277,7 @@
         } else {
           angle %= 2 * Math.PI;
           const step = (2 * Math.PI) / finalWedges.length;
-          // Calculate index based on angle, pointer at top (0 rad)
-          const index = Math.floor(finalWedges.length - Math.floor(angle / step)) % finalWedges.length;
+          const index = Math.floor((finalWedges.length - Math.floor((angle / step))) % finalWedges.length);
           currentSpinValue = finalWedges[index];
           document.getElementById('spinResult').textContent = `You spun: ${currentSpinValue}`;
           spinning = false;
@@ -328,3 +291,4 @@
   </script>
 </body>
 </html>
+
