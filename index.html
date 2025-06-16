@@ -268,34 +268,40 @@
     }
 
     function spinWheel() {
-      if (spinning) return;
-      spinning = true;
-      const duration = 3000;
-      const startAngle = angle;
-      const endAngle = startAngle + 10 * Math.PI + Math.random() * 2 * Math.PI;
-      const startTime = performance.now();
+  if (spinning) return;
+  spinning = true;
+  const duration = 3000;
+  const startAngle = angle;
+  const endAngle = startAngle + 10 * Math.PI + Math.random() * 2 * Math.PI;
+  const startTime = performance.now();
 
-      function animate(time) {
-        const elapsed = time - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const easedProgress = 1 - Math.pow(1 - progress, 3);
-        angle = startAngle + (endAngle - startAngle) * easedProgress;
-        drawWheel();
+  function animate(time) {
+    const elapsed = time - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easedProgress = 1 - Math.pow(1 - progress, 3);
+    angle = startAngle + (endAngle - startAngle) * easedProgress;
+    drawWheel();
 
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          angle %= 2 * Math.PI;
-          const step = (2 * Math.PI) / finalWedges.length;
-          const index = Math.floor((finalWedges.length - Math.floor((angle / step))) % finalWedges.length);
-          currentSpinValue = finalWedges[index];
-          document.getElementById('spinResult').textContent = `You spun: ${currentSpinValue}`;
-          spinning = false;
-        }
-      }
-
+    if (progress < 1) {
       requestAnimationFrame(animate);
+    } else {
+      spinning = false;
+      angle %= 2 * Math.PI;
+
+      const step = (2 * Math.PI) / finalWedges.length;
+
+      // Correct the offset so that the selection aligns with the 12 o'clock red arrow
+      const correctedAngle = (2 * Math.PI - angle + step / 2) % (2 * Math.PI);
+      const index = Math.floor(correctedAngle / step);
+
+      currentSpinValue = finalWedges[index];
+      document.getElementById('spinResult').textContent = `You spun: ${currentSpinValue}`;
     }
+  }
+
+  requestAnimationFrame(animate);
+}
+
 
     drawWheel();
   </script>
